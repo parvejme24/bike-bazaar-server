@@ -15,7 +15,7 @@ interface IProduct extends Document {
   stock: number;
   category: string;
   description: string;
-  images: string[];
+  images: string;
   rating: number;
   reviews: number;
   weight: number;
@@ -72,8 +72,7 @@ const ProductSchema: Schema<IProduct> = new Schema(
       trim: true,
     },
     images: {
-      type: [String],
-      default: [],
+      type: String,
     },
     rating: {
       type: Number,
