@@ -3,70 +3,57 @@ import bcrypt from "bcrypt";
 
 // user interface
 export interface IUser extends Document {
-  userId: string;
   name: string;
   email: string;
   password: string;
-  role: string;
-  image?: string;
-  address?: {
-    country?: string;
-    division?: string;
-    district?: string;
-    subDistrict?: string;
-    postOffice?: number;
-    detailsAddress?: string;
-  };
-  phone?: number;
-  comparePassword(candidatePassword: string): Promise<boolean>;
+  role: "customer" | "admin";
+  comparePassword(inputPassword: string): Promise<boolean>;
 }
 
 // user schema
-const userSchema: Schema<IUser> = new Schema(
+const userSchema = new Schema<IUser>(
   {
-    userId: {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    email: {
       type: String,
       required: true,
       unique: true,
-      default: function () {
-        return `u${Math.floor(100000 + Math.random() * 900000)}`;
-      },
+      lowercase: true,
     },
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    role: { type: String, default: "customer" },
-    image: { type: String },
-    address: {
-      country: { type: String },
-      division: { type: String },
-      district: { type: String },
-      subDistrict: { type: String },
-      postOffice: { type: Number },
-      detailsAddress: { type: String },
+    password: {
+      type: String,
+      required: true,
+      minlength: 6,
     },
-    phone: { type: Number },
+    role: {
+      type: String,
+      enum: ["customer", "admin"],
+      default: "customer",
+    },
   },
   {
     timestamps: true,
   }
 );
 
-// password hashing middleware
-userSchema.pre<IUser>("save", async function (next) {
+// password hashing before saving user
+userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
 // password comparison method
-userSchema.methods.comparePassword = async function (
-  candidatePassword: string
+userSchema.methods.comparePassword = function (
+  inputPassword: string
 ): Promise<boolean> {
-  return await bcrypt.compare(candidatePassword, this.password);
+  return bcrypt.compare(inputPassword, this.password);
 };
 
 // user model
-const User: Model<IUser> = mongoose.model<IUser>("User", userSchema);
-
-export default User;
+const UserModel: Model<IUser> = mongoose.model<IUser>("User", userSchema);
+export default UserModel;
